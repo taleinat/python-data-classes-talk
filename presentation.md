@@ -321,7 +321,7 @@ Notes:
 
 ---
 
-## Plain objects: Pros and Cons
+## Plain classes: Pros and Cons
 
 <div class="col-container">
 
@@ -386,7 +386,7 @@ Notes:
 ## Raymond Hettinger @PyCon
 
 <div style="text-align:center">
-![There must be a better way](https://media.giphy.com/media/3scoQYue48MeZL2bBi/giphy.gif "Dataclasses, featuring Raymond Hettinger in a GIF.")
+![There must be a better way](https://media.giphy.com/media/3scoQYue48MeZL2bBi/giphy.gif "Dataclasses, featuring Raymond Hettinger in a GIF.")<!-- .element height="70%" width="70%" -->
 </div>
 
 ---
@@ -485,11 +485,14 @@ Notes:
 
 - Inspired by attrs and heavily based on it
 - Must use type annotations on all attributes
-    - Use `typing.Any` when needed  
+    - Use `typing.Any` when needed
+- Relies on maintaining attribute definition order
+    - Python 3.6+
+- attrs also supports using type annotations
 
 ---
 
-## attrs: Pros and Cons
+## dataclasses: Pros and Cons
 
 <div class="col-container">
 
@@ -532,7 +535,7 @@ Notes:
 
 ---
 
-## Real example
+## Real example: fuzzysearch
 
 ```python
 class LevenshteinSearchParams(object):
@@ -626,7 +629,7 @@ Notes:
 
 - Actually, we've left just the boilerplate!
 - This is the boring, uninteresting stuff!
-- Mutable! Because I hadn't thought about it. 
+- Mutable! Because I hadn't thought about it.
 - No repr
 - No proper comparison, hashing
 
@@ -648,6 +651,8 @@ class Params:
         # validation logic
         # additional initialization logic
 ```
+
+VVV
 
 ## Simplified, with dataclasses
 
@@ -673,7 +678,7 @@ class Params:
 - This is a top enemy of software systems
 - Tends to grow quickly
 - Many things we do aim to address this:
-    - Tests
+    - Testing
     - Error handling
     - Defensive programming
         - `data.get('key', None)`
@@ -695,12 +700,11 @@ Notes:
     - An object won't suddenly change
     - Changes done explicitly by making copies
 
-Notes:
-
 VVV
 
-### frozen in our example
+### Immutability in our example
 
+```python
 @dataclass(frozen=True)
 class Params:
     # ...
@@ -708,6 +712,11 @@ class Params:
     def __post_init__(self):
         # validation logic
         self.four = min(self.four, self.one + self.two + self.three)
+```
+
+Notes:
+
+- Identical with attrs
 
 VVV
 
@@ -731,6 +740,10 @@ dataclasses.replace(p, four=42)
 ## Default values
 
 _Avoid mutable defaults!_
+
+```python
+def foo(items=[]):
+```
 
 A common pattern:
 
@@ -760,6 +773,7 @@ class Foo:
 Notes:
 
 - Similar in attrs
+- `Any` here just FYI
 
 ---
 
@@ -780,15 +794,23 @@ class Param:
         # ...
 ```
 
+Notes:
+
+- This is just an example of a corner you might run into.
+- Slots is notorious for making trouble. Just use `frozen` when possible.
+- If you need mutable data objects, slots can be useful.
+
 VVV
 
 ## Slots (cont.)
 
 - attrs: `@attrs(slots=True)`
-- dataclasses doesn't have special support for slots
-- Worse, with dataclasses, using slots severly limits the usable features.
-    - No default values
-    - Generally can't use `field()`
+- dataclasses:
+    - doesn't have special support for slots
+    - Worse, with dataclasses, using slots severly limits the usable features.
+        - No default values
+        - Generally can't use `field()`
+    - There are workarounds for this...
 
 ---
 
@@ -796,16 +818,17 @@ VVV
 
 - tuples and namedtuples are hard to extend
 - dicts are easy to extend
-    - but this easily leads to a mess
+    - ... too easy! Can be extended at any place in the code.
 - Plain classes make extending much safer
-    - but updating all of the boilerplate is very fragile!
-    - nobody writes unit tests for every data class...
+    - But, updating all of the boilerplate is very fragile!
+    - Nobody writes unit tests for every data class...
 - attrs / dataclasses give the best of both worlds
-    - both allow sub-classing
-    - mixing with `@property` is tricky, though
+    - Both allow sub-classing.
+    - Mixing with `@property` is tricky, though.
 
 Notes:
 
+- I've seen dict-hacking lead to horrible messes many times.
 - I personally don't recommend sub-classing data classes.
 - "consenting adults" approach
 
@@ -816,6 +839,16 @@ Notes:
 - I highly recommend using dataclasses if you can, attrs otherwise.
 - "Explicit is better than implicit"
 - Easy → Actually used
+
+---
+
+## Example recommended use cases
+
+- Configuration
+- Functions with common or similar signatures
+    - E.g. call chains
+- Components and module boundaries
+    - Part of the contract / interface
 
 ---
 
