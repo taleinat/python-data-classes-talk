@@ -94,7 +94,7 @@ assert text[match_start, match_end] == match_text
 <p><strong>Cons:</strong></p>
 <ul>
 <li>Opaque</li>
-<li>Unpacking => Intermediate variables</li>
+<li>Unpacking → Intermediate variables</li>
 <li>Non-extensible</li>
 <li>Immutable</li>
 </ul>
@@ -180,7 +180,7 @@ assert text[match['start']:match['end']] == match['text']
 Notes:
 
 - "I'll just throw this in this dict to fetch it elsewhere..."
-- Missing keys => defensive programming
+- Missing keys → defensive programming
 - Mutable: No frozen dict!
 
 ---
@@ -498,7 +498,7 @@ Notes:
 <p><strong>Pros:</strong></p>
 <ul>
 <li>Looks like a class def</li>
-<li>stdlib => IDE support!</li>
+<li>stdlib → IDE support!</li>
 <li>Concise, declarative</li>
 <li>Named, <code>isinstance()</code></li>
 <li>Mutable (or not!)</li>
@@ -668,13 +668,38 @@ class Params:
 
 ---
 
-## Immutability
+# Uncertainty
 
-- 
+- This is a top enemy of software systems
+- Tends to grow quickly
+- Many things we do aim to address this:
+    - Tests
+    - Error handling
+    - Defensive programming
+        - `data.get('key', None)`
+        - `try: ... except Exception:`
+- Certainity → Organizational Scalability
+
+Notes:
+
+- Don't use bare `except:`!
 
 ---
 
-## frozen in our example
+## Immutability
+
+- A basic concept in functional languages
+- Growing adoption in Javascript circles
+- Useful examples: configuration
+- Immutability promotes certainty
+    - An object won't suddenly change
+    - Changes done explicitly by making copies
+
+Notes:
+
+VVV
+
+### frozen in our example
 
 @dataclass(frozen=True)
 class Params:
@@ -686,31 +711,111 @@ class Params:
 
 VVV
 
-## Mutable vs. Immutable
+### replacing attributes
 
-@dataclass(frozen=True)
-class Params:
-    # ...
-    
-    def __post_init__(self):
-        # validation logic
-        x = min(self.four, self.one + self.two + self.three)
-        object.__setattr__(self, 'four', x)
+```python
+p = Params(1, 2, 3, 4)
+```
+
+```python
+attrs.evolve(p, four=42)
+```
+
+```python
+dataclasses.replace(p, four=42)
+# similar to namedtuple._replace()
+```
 
 ---
 
-## Uncertainty
+## Default values
+
+_Avoid mutable defaults!_
+
+A common pattern:
+
+```python
+def foo(items=None):
+    if items is None:
+        items = []
+```
+
+```python
+def foo(items=None):
+    items = items or []
+```
 
 ---
 
-<!-- .element: class="auto-fragment" -->
+## Default values and factories
+
+```python
+@dataclass
+class Foo:
+    a: int = 0
+    b: List[int] = field(default_factory=list)
+    c: Any = None
+```
+
+Notes:
+
+- Similar in attrs
+
+---
+
+## Slots
+
+- An obscure feature of Python classes
+- Hard-codes the list of attribute names
+- Allows memory optimization
+- Turns typos in assignment into errors
+    - rather than assigning an arbitrary attribute
+
+Plain Python object example:
+
+```python
+class Param:
+    __slots__ = ['one', 'two', 'three', 'four']
+    def __init__(self, one, two, three, four):
+        # ...
+```
+
+VVV
+
+## Slots (cont.)
+
+- attrs: `@attrs(slots=True)`
+- dataclasses doesn't have special support for slots
+- Worse, with dataclasses, using slots severly limits the usable features.
+    - No default values
+    - Generally can't use `field()`
+
+---
+
+# Extensibility
+
+- tuples and namedtuples are hard to extend
+- dicts are easy to extend
+    - but this easily leads to a mess
+- Plain classes make extending much safer
+    - but updating all of the boilerplate is very fragile!
+    - nobody writes unit tests for every data class...
+- attrs / dataclasses give the best of both worlds
+    - both allow sub-classing
+    - mixing with `@property` is tricky, though
+
+Notes:
+
+- I personally don't recommend sub-classing data classes.
+- "consenting adults" approach
+
+---
 
 ## Final Remarks
 
-- I found this project more interesting than expected
-- In my research, I found surprisingly little recent info on such conversions
-  done by others
-- Hire me!
+- I highly recommend using dataclasses if you can, attrs otherwise.
+- "Explicit is better than implicit"
+- Easy → Actually used
 
 ---
 
